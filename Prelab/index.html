@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TensorFlow.js Console Demo</title>
+
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #141e30, #243b55);
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    .card {
+      background: #ffffff;
+      padding: 35px 45px;
+      border-radius: 20px;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.4);
+      text-align: center;
+      width: 420px;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #222;
+    }
+
+    .note {
+      font-size: 14px;
+      color: #555;
+      background: #f3f6ff;
+      padding: 12px;
+      border-radius: 10px;
+      margin-top: 15px;
+    }
+
+    .highlight {
+      margin-top: 18px;
+      font-size: 15px;
+      color: #4c6ef5;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="card">
+    <h1>TensorFlow.js Demo</h1>
+    <div class="highlight">Open Browser Console (F12)</div>
+    <div class="note">
+      All tensor calculations and results are logged in the
+      <b>Developer Console</b>.
+    </div>
+  </div>
+
+  <!-- TensorFlow.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+
+  <script>
+    console.log("=================================");
+    console.log(" TensorFlow.js Console Demo ");
+    console.log("=================================");
+
+    console.log("TensorFlow.js version:", tf.version.tfjs);
+
+    const a = tf.tensor([1, 2, 3]);
+    const b = tf.tensor([4, 5, 6]);
+
+    console.log("Tensor A:");
+    a.print();
+
+    console.log("Tensor B:");
+    b.print();
+
+    const result = a.add(b);
+
+    console.log("Tensor Addition (A + B):");
+    result.print();
+
+    console.log("Calculation:");
+    console.log("[1, 2, 3] + [4, 5, 6] = ", result.dataSync());
+
+    a.dispose();
+    b.dispose();
+    result.dispose();
+
+    console.log("Resources disposed ✔");
+  </script>
+
+</body>
+</html>
