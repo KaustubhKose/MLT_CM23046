@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<title>Assignment 3 – Model Comparison</title>
+
+<!-- TensorFlow.js -->
+<script src="https://unpkg.com/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+
+<!-- MobileNet -->
+<script src="https://unpkg.com/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Segoe UI', sans-serif;
+}
+
+body{
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+
+/* New colorful gradient background */
+background: linear-gradient(140deg,#ff9966,#ff5e62);
+}
+
+.wrapper{
+width:520px;
+background:white;
+padding:40px;
+border-radius:18px;
+box-shadow:0 20px 40px rgba(0,0,0,0.25);
+text-align:center;
+}
+
+.title{
+font-size:26px;
+color:#2c3e50;
+margin-bottom:8px;
+}
+
+.subtitle{
+font-size:14px;
+color:#777;
+margin-bottom:20px;
+}
+
+.image-frame{
+margin:20px 0;
+}
+
+.image-frame img{
+width:280px;
+border-radius:14px;
+border:3px solid #f1f1f1;
+box-shadow:0 12px 25px rgba(0,0,0,0.15);
+transition:transform .3s;
+}
+
+.image-frame img:hover{
+transform:scale(1.05);
+}
+
+.controls{
+margin-top:15px;
+}
+
+button{
+padding:12px 22px;
+border:none;
+border-radius:30px;
+margin:6px;
+font-size:14px;
+cursor:pointer;
+color:white;
+transition:.3s;
+}
+
+.prev-btn{
+background:#3498db;
+}
+
+.next-btn{
+background:#27ae60;
+}
+
+.compare-btn{
+background:#e67e22;
+}
+
+button:hover{
+opacity:0.9;
+transform:translateY(-2px);
+}
+
+#result{
+margin-top:20px;
+padding:14px;
+border-radius:10px;
+background:#f4f6fb;
+font-size:17px;
+font-weight:bold;
+color:#2c3e50;
+}
+
+.footer{
+margin-top:20px;
+font-size:12px;
+color:#888;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="wrapper">
+
+<div class="title">🧠 Model Comparison Lab</div>
+<div class="subtitle">MobileNet vs Dense Neural Network</div>
+
+<div class="image-frame">
+<img id="img" src="img1.jpg">
+</div>
+
+<div class="controls">
+<button class="prev-btn" onclick="prev()">⟵ Previous</button>
+<button class="next-btn" onclick="next()">Next ⟶</button>
+<button class="compare-btn" onclick="compare()">⚡ Compare Models</button>
+</div>
+
+<p id="result">Model prediction results will appear here...</p>
+
+<div class="footer">
+Deep Learning Assignment – Image Recognition
+</div>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>

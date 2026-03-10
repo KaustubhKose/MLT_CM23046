@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Assignment 1 – MobileNet Static Image</title>
+
+<script src="https://unpkg.com/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+<script src="https://unpkg.com/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
+
+<style>
+
+body{
+    margin:0;
+    font-family:'Segoe UI', Tahoma, sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    /* Animated Gradient Background */
+    background: linear-gradient(120deg, #ff9a9e, #fad0c4, #fbc2eb, #a18cd1);
+    background-size:300% 300%;
+    animation:gradientMove 10s ease infinite;
+}
+
+@keyframes gradientMove {
+    0% {background-position:0% 50%;}
+    50% {background-position:100% 50%;}
+    100% {background-position:0% 50%;}
+}
+
+.container{
+    background:white;
+    padding:40px;
+    border-radius:16px;
+    width:420px;
+    box-shadow:0 15px 40px rgba(0,0,0,0.2);
+    text-align:center;
+}
+
+h2{
+    color:#333;
+    margin-bottom:10px;
+}
+
+.subtitle{
+    color:#777;
+    font-size:14px;
+    margin-bottom:20px;
+}
+
+img{
+    width:280px;
+    border-radius:12px;
+    margin:15px 0;
+    box-shadow:0 8px 20px rgba(0,0,0,0.15);
+    transition:transform 0.3s;
+}
+
+img:hover{
+    transform:scale(1.05);
+}
+
+button{
+    padding:12px 28px;
+    background: linear-gradient(45deg,#ff7e5f,#feb47b);
+    color:white;
+    font-size:16px;
+    border:none;
+    border-radius:25px;
+    cursor:pointer;
+    transition:all 0.3s ease;
+    box-shadow:0 6px 15px rgba(0,0,0,0.2);
+}
+
+button:hover{
+    transform:translateY(-3px);
+    box-shadow:0 10px 20px rgba(0,0,0,0.25);
+}
+
+#result{
+    margin-top:20px;
+    font-size:18px;
+    font-weight:bold;
+    color:#444;
+    padding:10px;
+    border-radius:8px;
+    background:#f4f6ff;
+}
+
+.footer{
+    margin-top:20px;
+    font-size:12px;
+    color:#888;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>🧠 MobileNet Image Classifier</h2>
+<p class="subtitle">Deep Learning Image Recognition using TensorFlow.js</p>
+
+<img id="img" src="img1.jpg">
+
+<br>
+
+<button onclick="classifyImage()">🔍 Classify Image</button>
+
+<p id="result">Prediction will appear here...</p>
+
+<div class="footer">
+AI Assignment – Computer Vision
+</div>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
