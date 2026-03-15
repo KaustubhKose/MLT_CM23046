@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Model Deployment — Save, Load & Predict</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+
+    <!-- Ambient background orbs -->
+    <div class="orb orb-1" aria-hidden="true"></div>
+    <div class="orb orb-2" aria-hidden="true"></div>
+    <div class="orb orb-3" aria-hidden="true"></div>
+
+    <div class="app-shell">
+
+      <!-- ── Header ── -->
+      <header class="app-header">
+        <div class="header-brand">
+          <div class="brand-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <div>
+            <h1>Model Deployment</h1>
+            <p class="brand-sub">TensorFlow.js · Browser-native Save &amp; Load</p>
+          </div>
+        </div>
+        <div class="header-status">
+          <div class="status-pill" id="global-status">
+            <span class="status-dot" id="global-dot"></span>
+            <span id="global-label">Initialising…</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- ── Pipeline Steps ── -->
+      <div class="pipeline-strip">
+        <div class="pipe-step" id="step-train">
+          <div class="pipe-num">01</div>
+          <div class="pipe-text">Train</div>
+        </div>
+        <div class="pipe-arrow">›</div>
+        <div class="pipe-step" id="step-save">
+          <div class="pipe-num">02</div>
+          <div class="pipe-text">Save</div>
+        </div>
+        <div class="pipe-arrow">›</div>
+        <div class="pipe-step" id="step-load">
+          <div class="pipe-num">03</div>
+          <div class="pipe-text">Load</div>
+        </div>
+        <div class="pipe-arrow">›</div>
+        <div class="pipe-step" id="step-predict">
+          <div class="pipe-num">04</div>
+          <div class="pipe-text">Predict</div>
+        </div>
+      </div>
+
+      <main class="app-main">
+
+        <!-- ══ STEP 1: Train ══════════════════════════════════════ -->
+        <section class="card" id="card-train">
+          <div class="card-header">
+            <div class="card-title">
+              <span class="step-tag">01</span>
+              Train a Model
+            </div>
+            <span class="card-badge" id="train-badge">Not trained</span>
+          </div>
+
+          <p class="card-desc">
+            Trains a small neural network on a synthetic dataset (house size → price regression). Adjust the configuration, then click Train.
+          </p>
+
+          <div class="config-grid">
+            <div class="cfg-field">
+              <label>Samples</label>
+              <input type="number" id="cfg-samples" value="200" min="50" max="1000" />
+            </div>
+            <div class="cfg-field">
+              <label>Hidden Units</label>
+              <input type="number" id="cfg-units" value="16" min="4" max="128" />
+            </div>
+            <div class="cfg-field">
+              <label>Epochs</label>
+              <input type="number" id="cfg-epochs" value="80" min="10" max="300" />
+            </div>
+            <div class="cfg-field">
+              <label>Learning Rate</label>
+              <input type="number" id="cfg-lr" value="0.01" min="0.0001" max="0.5" step="0.001" />
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button class="btn btn-primary" id="btn-train">
+              <span class="btn-icon">⚡</span> Train Model
+            </button>
+            <span class="action-status" id="train-status">Ready</span>
+          </div>
+
+          <div class="progress-row" id="train-progress-row" style="display:none">
+            <div class="progress-track">
+              <div class="progress-fill" id="train-fill" style="width:0%"></div>
+            </div>
+            <span class="progress-label" id="train-pct">0%</span>
+          </div>
+
+          <div class="metrics-band" id="train-metrics" style="display:none">
+            <div class="metric-chip">
+              <span class="mc-val" id="m-loss">—</span>
+              <span class="mc-key">Final Loss</span>
+            </div>
+            <div class="metric-chip">
+              <span class="mc-val" id="m-mae">—</span>
+              <span class="mc-key">MAE</span>
+            </div>
+            <div class="metric-chip">
+              <span class="mc-val" id="m-params">—</span>
+              <span class="mc-key">Parameters</span>
+            </div>
+            <div class="metric-chip">
+              <span class="mc-val" id="m-time">—</span>
+              <span class="mc-key">Train Time</span>
+            </div>
+          </div>
+
+          <!-- Mini loss chart -->
+          <canvas id="loss-canvas" height="140" style="display:none"></canvas>
+        </section>
+
+        <!-- ══ STEP 2: Save ═══════════════════════════════════════ -->
+        <section class="card" id="card-save">
+          <div class="card-header">
+            <div class="card-title">
+              <span class="step-tag">02</span>
+              Save Model
+            </div>
+            <span class="card-badge" id="save-badge">Not saved</span>
+          </div>
+
+          <p class="card-desc">
+            Serialises model weights + architecture to <strong>IndexedDB</strong> (persists across page reloads), or download the files directly.
+          </p>
+
+          <div class="save-options">
+            <label class="radio-card" id="opt-indexeddb">
+              <input type="radio" name="save-dest" value="indexeddb" checked />
+              <div class="rc-icon">🗄️</div>
+              <div class="rc-body">
+                <div class="rc-title">IndexedDB</div>
+                <div class="rc-sub">Persists in browser storage</div>
+              </div>
+            </label>
+            <label class="radio-card" id="opt-download">
+              <input type="radio" name="save-dest" value="downloads" />
+              <div class="rc-icon">⬇️</div>
+              <div class="rc-body">
+                <div class="rc-title">Download Files</div>
+                <div class="rc-sub">model.json + weights.bin</div>
+              </div>
+            </label>
+            <label class="radio-card" id="opt-localstorage">
+              <input type="radio" name="save-dest" value="localstorage" />
+              <div class="rc-icon">📦</div>
+              <div class="rc-body">
+                <div class="rc-title">LocalStorage</div>
+                <div class="rc-sub">Small models only</div>
+              </div>
+            </label>
+          </div>
+
+          <div class="card-actions">
+            <button class="btn btn-save" id="btn-save" disabled>
+              <span class="btn-icon">💾</span> Save Model
+            </button>
+            <span class="action-status" id="save-status">Train a model first</span>
+          </div>
+
+          <div class="save-result" id="save-result" style="display:none">
+            <div class="result-line">
+              <span class="rl-key">Saved to</span>
+              <span class="rl-val" id="save-path">—</span>
+            </div>
+            <div class="result-line">
+              <span class="rl-key">Saved at</span>
+              <span class="rl-val" id="save-time">—</span>
+            </div>
+            <div class="result-line">
+              <span class="rl-key">Model key</span>
+              <span class="rl-val mono" id="save-key">—</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══ STEP 3: Load ═══════════════════════════════════════ -->
+        <section class="card" id="card-load">
+          <div class="card-header">
+            <div class="card-title">
+              <span class="step-tag">03</span>
+              Reload Model
+            </div>
+            <span class="card-badge" id="load-badge">Not loaded</span>
+          </div>
+
+          <p class="card-desc">
+            Loads the saved model back from storage — simulating a fresh page load scenario. The reloaded model is fully functional.
+          </p>
+
+          <div class="load-source-row">
+            <div class="ls-field">
+              <label>Load from</label>
+              <select id="load-source">
+                <option value="indexeddb">IndexedDB (auto-detect)</option>
+                <option value="file">Upload model.json file</option>
+              </select>
+            </div>
+            <div class="ls-file-wrap" id="file-upload-wrap" style="display:none">
+              <label class="file-drop" id="file-drop">
+                <input type="file" id="model-file-input" accept=".json" />
+                <span>Click or drag model.json here</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button class="btn btn-load" id="btn-load" disabled>
+              <span class="btn-icon">↺</span> Load Model
+            </button>
+            <span class="action-status" id="load-status">Save a model first</span>
+          </div>
+
+          <div class="model-summary" id="model-summary" style="display:none">
+            <div class="ms-title">Loaded Model Architecture</div>
+            <div id="arch-layers" class="arch-layers"></div>
+          </div>
+        </section>
+
+        <!-- ══ STEP 4: Predict ════════════════════════════════════ -->
+        <section class="card" id="card-predict">
+          <div class="card-header">
+            <div class="card-title">
+              <span class="step-tag">04</span>
+              Run Predictions
+            </div>
+            <span class="card-badge" id="predict-badge">No model</span>
+          </div>
+
+          <p class="card-desc">
+            Enter house sizes (sq ft) to get price predictions from the loaded model. Compare original vs loaded model outputs.
+          </p>
+
+          <!-- Single prediction -->
+          <div class="predict-single">
+            <div class="ps-label">Single Prediction</div>
+            <div class="ps-row">
+              <div class="ps-input-group">
+                <span class="ps-unit">sq ft</span>
+                <input type="number" id="pred-input" value="1500" min="100" max="10000" placeholder="House size" disabled />
+              </div>
+              <button class="btn btn-predict" id="btn-predict" disabled>
+                Predict →
+              </button>
+            </div>
+            <div class="prediction-result" id="pred-result" style="display:none">
+              <div class="pr-row">
+                <span class="pr-label">Original model</span>
+                <span class="pr-val primary" id="pred-original">—</span>
+              </div>
+              <div class="pr-row">
+                <span class="pr-label">Loaded model</span>
+                <span class="pr-val secondary" id="pred-loaded">—</span>
+              </div>
+              <div class="pr-row">
+                <span class="pr-label">Difference</span>
+                <span class="pr-val dim" id="pred-diff">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Batch prediction -->
+          <div class="predict-batch">
+            <div class="ps-label">Batch Predictions</div>
+            <div class="batch-inputs">
+              <input type="text" id="batch-input" placeholder="e.g. 800, 1200, 2000, 3500, 5000" disabled />
+              <button class="btn btn-batch" id="btn-batch" disabled>Run Batch →</button>
+            </div>
+            <div id="batch-results" class="batch-results"></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Comparison chart -->
+          <div class="ps-label">Prediction Chart</div>
+          <canvas id="pred-chart" height="200" style="display:none"></canvas>
+          <p class="chart-placeholder" id="chart-placeholder">Run predictions to see the chart.</p>
+        </section>
+
+        <!-- ══ Prediction Log ══════════════════════════════════════ -->
+        <section class="card" id="card-log">
+          <div class="card-header">
+            <div class="card-title">
+              <span class="step-tag">◈</span>
+              Prediction Log
+            </div>
+            <button class="btn-ghost" id="btn-clear-log">Clear</button>
+          </div>
+          <div class="log-table-wrap">
+            <table id="log-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Input (sq ft)</th>
+                  <th>Original</th>
+                  <th>Loaded</th>
+                  <th>Δ</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody id="log-body">
+                <tr><td colspan="6" class="log-empty">No predictions yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </main>
+    </div><!-- /app-shell -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
