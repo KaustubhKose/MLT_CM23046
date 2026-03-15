@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assignment 1 – Webcam + MobileNet Classification</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-badge">✦ TensorFlow.js · MobileNet v2</div>
+      <h1>Assignment 1</h1>
+      <p class="subtitle">Capture Webcam Frames &amp; Classify with MobileNet</p>
+    </header>
+
+    <main>
+      <section class="video-section">
+        <video id="webcam" autoplay muted playsinline></video>
+        <canvas id="frame-canvas"></canvas>
+      </section>
+
+      <section class="controls">
+        <button id="btn-start">▶ Start Webcam</button>
+        <button id="btn-capture" disabled>⊕ Capture &amp; Classify</button>
+        <button id="btn-stop" disabled>■ Stop</button>
+      </section>
+
+      <section class="results" id="results">
+        <h2>Classification Results</h2>
+        <p id="status-msg" class="status">Model loading…</p>
+        <ul id="result-list"></ul>
+      </section>
+
+      <section class="captured-frames">
+        <h2>Captured Frames</h2>
+        <div id="frames-grid"></div>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

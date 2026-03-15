@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assignment 3 – FPS &amp; Performance Analysis</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-badge">⚡ Performance Analysis · Real-Time Inference</div>
+      <h1>Assignment 3</h1>
+      <p class="subtitle">FPS Measurement &amp; Real-Time Inference Performance Analysis</p>
+    </header>
+
+    <main>
+      <div class="metrics-bar">
+        <div class="metric">
+          <div class="metric-value" id="m-fps">—</div>
+          <div class="metric-label">Render FPS</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value" id="m-infer-fps">—</div>
+          <div class="metric-label">Inference FPS</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value" id="m-latency">—</div>
+          <div class="metric-label">Avg Latency (ms)</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value" id="m-drop">—</div>
+          <div class="metric-label">Frame Drop %</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value" id="m-count">0</div>
+          <div class="metric-label">Total Inferences</div>
+        </div>
+      </div>
+
+      <div class="video-wrap">
+        <video id="webcam" autoplay muted playsinline></video>
+        <canvas id="overlay"></canvas>
+        <div id="fps-hud">FPS: —</div>
+      </div>
+
+      <div class="controls">
+        <button id="btn-start">▶ Start</button>
+        <button id="btn-stop" disabled>■ Stop</button>
+        <button id="btn-clear" disabled>↺ Clear Log</button>
+        <label class="slider-label">
+          Max infer/s
+          <input type="range" id="rate-limit" min="1" max="30" value="10" step="1" />
+          <span id="rate-val">10</span>
+        </label>
+      </div>
+
+      <section class="chart-section">
+        <div class="section-header">
+          <h2>FPS Over Time</h2>
+          <span id="chart-note">Render FPS (green) · Inference FPS (amber)</span>
+        </div>
+        <canvas id="fps-chart" height="160"></canvas>
+      </section>
+
+      <section class="log-section">
+        <h2>Inference Log <span id="log-count">(0 entries)</span></h2>
+        <div class="table-wrap">
+          <table id="log-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Timestamp (s)</th>
+                <th>Latency (ms)</th>
+                <th>Top Label</th>
+                <th>Confidence</th>
+              </tr>
+            </thead>
+            <tbody id="log-body">
+              <tr><td colspan="5" class="empty-row">No data yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="stats-section" id="stats-section">
+        <h2>Performance Summary</h2>
+        <div class="stats-grid" id="stats-grid">
+          <p class="stats-placeholder">Run inference to see statistics.</p>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

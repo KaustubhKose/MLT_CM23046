@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assignment 2 – Live Label Overlay</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-badge">◈ Live Inference · Canvas Overlay</div>
+      <h1>Assignment 2</h1>
+      <p class="subtitle">Overlay Classification Labels on Live Video Feed</p>
+    </header>
+
+    <main>
+      <div class="video-wrap">
+        <video id="webcam" autoplay muted playsinline></video>
+        <canvas id="overlay"></canvas>
+        <div id="hud-label" class="hud-label">—</div>
+        <div id="hud-status" class="hud-status">idle</div>
+      </div>
+
+      <div class="controls">
+        <button id="btn-start">▶ Start</button>
+        <button id="btn-stop" disabled>■ Stop</button>
+        <label class="toggle-wrap">
+          <input type="checkbox" id="toggle-overlay" checked />
+          Show overlay
+        </label>
+        <label class="toggle-wrap">
+          <input type="checkbox" id="toggle-continuous" checked />
+          Continuous inference
+        </label>
+      </div>
+
+      <section class="pred-section">
+        <h2>Live Predictions</h2>
+        <table id="pred-table">
+          <thead>
+            <tr><th>#</th><th>Label</th><th>Confidence</th><th>Bar</th></tr>
+          </thead>
+          <tbody id="pred-body">
+            <tr><td colspan="4" class="empty-row">No predictions yet</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
