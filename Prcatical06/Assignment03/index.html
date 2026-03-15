@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assignment 3 – RNN vs Dense Comparison</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-badge">◈ CO2 · Sentiment Analysis · Task 3</div>
+      <h1>RNN vs Dense Network</h1>
+      <p class="subtitle">Train and compare a GlobalAvgPool Dense network against an LSTM — side by side across accuracy, loss, speed, and parameters.</p>
+    </header>
+
+    <main>
+
+      <div class="model-grid">
+
+        <section class="model-card" id="card-dense">
+          <div class="model-badge dense-badge">⬡ Dense Network</div>
+          <div class="model-arch-summary">
+            Embedding → GlobalAvgPool → Dense(ReLU) → Dropout → Sigmoid
+          </div>
+          <div class="model-config">
+            <div class="cfg-row"><span>Hidden units</span>
+              <input type="number" id="dense-units" value="32" min="8" max="128" /></div>
+            <div class="cfg-row"><span>Embedding dim</span>
+              <input type="number" id="dense-embed" value="16" min="4" max="64" /></div>
+            <div class="cfg-row"><span>Epochs</span>
+              <input type="number" id="dense-epochs" value="60" min="10" max="200" /></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-track"><div class="progress-fill dense-fill" id="dense-fill" style="width:0%"></div></div>
+            <span class="progress-pct" id="dense-pct">0%</span>
+          </div>
+          <button class="btn-train-model dense-btn" id="btn-train-dense">⚡ Train Dense</button>
+          <div class="model-metrics" id="dense-metrics">
+            <div class="mm"><span class="mv" id="d-acc">—</span><span class="mk">Accuracy</span></div>
+            <div class="mm"><span class="mv" id="d-loss">—</span><span class="mk">Loss</span></div>
+            <div class="mm"><span class="mv" id="d-time">—</span><span class="mk">Train Time</span></div>
+            <div class="mm"><span class="mv" id="d-params">—</span><span class="mk">Params</span></div>
+          </div>
+        </section>
+
+        <section class="model-card" id="card-rnn">
+          <div class="model-badge rnn-badge">⬡ LSTM Network</div>
+          <div class="model-arch-summary">
+            Embedding → LSTM(seq-aware) → Dense(ReLU) → Dropout → Sigmoid
+          </div>
+          <div class="model-config">
+            <div class="cfg-row"><span>LSTM units</span>
+              <input type="number" id="rnn-units" value="32" min="4" max="128" /></div>
+            <div class="cfg-row"><span>Embedding dim</span>
+              <input type="number" id="rnn-embed" value="16" min="4" max="64" /></div>
+            <div class="cfg-row"><span>Epochs</span>
+              <input type="number" id="rnn-epochs" value="60" min="10" max="200" /></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-track"><div class="progress-fill rnn-fill" id="rnn-fill" style="width:0%"></div></div>
+            <span class="progress-pct" id="rnn-pct">0%</span>
+          </div>
+          <button class="btn-train-model rnn-btn" id="btn-train-rnn">⚡ Train LSTM</button>
+          <div class="model-metrics" id="rnn-metrics">
+            <div class="mm"><span class="mv" id="r-acc">—</span><span class="mk">Accuracy</span></div>
+            <div class="mm"><span class="mv" id="r-loss">—</span><span class="mk">Loss</span></div>
+            <div class="mm"><span class="mv" id="r-time">—</span><span class="mk">Train Time</span></div>
+            <div class="mm"><span class="mv" id="r-params">—</span><span class="mk">Params</span></div>
+          </div>
+        </section>
+
+      </div>
+
+      <div class="train-both-row">
+        <button id="btn-train-both" class="btn-both">⚡ Train Both Models</button>
+        <span class="both-status" id="both-status"></span>
+      </div>
+
+      <section class="card">
+        <div class="card-header">
+          <span class="card-title">Loss Curves Comparison</span>
+          <div class="chart-legend">
+            <span class="leg dense-leg">Dense</span>
+            <span class="leg rnn-leg">LSTM</span>
+          </div>
+        </div>
+        <canvas id="compare-chart" height="200"></canvas>
+      </section>
+
+      <section class="card">
+        <div class="card-header"><span class="card-title">Head-to-Head Comparison</span></div>
+        <table class="compare-table" id="compare-table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th class="dense-col">Dense Network</th>
+              <th class="rnn-col">LSTM Network</th>
+              <th>Winner</th>
+            </tr>
+          </thead>
+          <tbody id="compare-body">
+            <tr><td colspan="4" class="empty-row">Train both models to see comparison</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <div class="card-header"><span class="card-title">Live Side-by-Side Test</span></div>
+        <div class="live-input-row">
+          <input type="text" id="live-input" placeholder="Type a sentence to run through both models simultaneously…" />
+          <button id="btn-live-test" class="btn-primary" disabled>Test Both →</button>
+        </div>
+        <div id="live-results" class="live-results" style="display:none">
+          <div class="live-col">
+            <div class="live-model-label dense-lab">Dense</div>
+            <div class="live-bar-wrap">
+              <div class="live-bar dense-bar" id="live-dense-bar" style="width:50%"></div>
+            </div>
+            <div class="live-score" id="live-dense-score">—</div>
+            <div class="live-verdict" id="live-dense-verdict">—</div>
+          </div>
+          <div class="vs-divider">VS</div>
+          <div class="live-col">
+            <div class="live-model-label rnn-lab">LSTM</div>
+            <div class="live-bar-wrap">
+              <div class="live-bar rnn-bar" id="live-rnn-bar" style="width:50%"></div>
+            </div>
+            <div class="live-score" id="live-rnn-score">—</div>
+            <div class="live-verdict" id="live-rnn-verdict">—</div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

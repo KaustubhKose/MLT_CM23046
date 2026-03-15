@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assignment 1 – Train Sentiment Classifier</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-badge">◈ CO2 · Sentiment Analysis · Task 1</div>
+      <h1>Sentiment Classifier</h1>
+      <p class="subtitle">Train a binary sentiment classifier on positive &amp; negative sentences using TensorFlow.js — fully in-browser, zero server required.</p>
+    </header>
+
+    <main>
+
+      <section class="card" id="dataset-panel">
+        <div class="card-header">
+          <span class="card-title">Training Dataset</span>
+          <span class="badge badge-info" id="dataset-count">40 sentences</span>
+        </div>
+        <div class="dataset-cols">
+          <div class="dataset-col positive">
+            <div class="col-label positive-label">✦ Positive</div>
+            <ul id="pos-list" class="sentence-list"></ul>
+          </div>
+          <div class="dataset-col negative">
+            <div class="col-label negative-label">✦ Negative</div>
+            <ul id="neg-list" class="sentence-list"></ul>
+          </div>
+        </div>
+        <div class="add-row">
+          <input type="text" id="new-sentence" placeholder="Add a custom sentence to the dataset…" />
+          <select id="new-label">
+            <option value="1">Positive</option>
+            <option value="0">Negative</option>
+          </select>
+          <button id="btn-add">+ Add</button>
+        </div>
+      </section>
+
+      <section class="card" id="config-panel">
+        <div class="card-header">
+          <span class="card-title">Training Configuration</span>
+        </div>
+        <div class="config-grid">
+          <div class="config-item">
+            <label>Vocab Size</label>
+            <div class="config-val" id="cfg-vocab">—</div>
+          </div>
+          <div class="config-item">
+            <label>Embedding Dim</label>
+            <input type="number" id="cfg-embed" value="16" min="4" max="64" />
+          </div>
+          <div class="config-item">
+            <label>Hidden Units</label>
+            <input type="number" id="cfg-units" value="32" min="8" max="128" />
+          </div>
+          <div class="config-item">
+            <label>Epochs</label>
+            <input type="number" id="cfg-epochs" value="60" min="10" max="200" />
+          </div>
+          <div class="config-item">
+            <label>Learning Rate</label>
+            <input type="number" id="cfg-lr" value="0.005" min="0.0001" max="0.1" step="0.001" />
+          </div>
+          <div class="config-item">
+            <label>Max Seq Len</label>
+            <input type="number" id="cfg-seqlen" value="20" min="5" max="50" />
+          </div>
+        </div>
+        <div class="train-actions">
+          <button id="btn-train" class="btn-primary">⚡ Train Model</button>
+          <span id="train-status" class="train-status">Not trained yet</span>
+        </div>
+      </section>
+
+      <section class="card" id="progress-panel">
+        <div class="card-header">
+          <span class="card-title">Training Progress</span>
+          <span class="badge" id="epoch-badge">Epoch 0 / 0</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+          </div>
+          <span class="progress-pct" id="progress-pct">0%</span>
+        </div>
+        <canvas id="loss-chart" height="180"></canvas>
+        <div class="metrics-row">
+          <div class="mini-metric">
+            <span class="mm-val" id="mm-loss">—</span>
+            <span class="mm-label">Final Loss</span>
+          </div>
+          <div class="mini-metric">
+            <span class="mm-val" id="mm-acc">—</span>
+            <span class="mm-label">Train Accuracy</span>
+          </div>
+          <div class="mini-metric">
+            <span class="mm-val" id="mm-time">—</span>
+            <span class="mm-label">Train Time</span>
+          </div>
+          <div class="mini-metric">
+            <span class="mm-val" id="mm-params">—</span>
+            <span class="mm-label">Parameters</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="arch-panel">
+        <div class="card-header">
+          <span class="card-title">Model Architecture</span>
+        </div>
+        <div id="arch-viz" class="arch-viz">
+          <p class="placeholder-text">Train the model to see its architecture.</p>
+        </div>
+      </section>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PoseNet — Human Pose Detection</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+
+    <!-- Scanline overlay -->
+    <div class="scanlines" aria-hidden="true"></div>
+
+    <header>
+      <div class="header-left">
+        <div class="logo-mark">
+          <span class="logo-bracket">[</span>
+          <span class="logo-icon">⬡</span>
+          <span class="logo-bracket">]</span>
+        </div>
+        <div class="header-text">
+          <h1>PoseNet</h1>
+          <p class="subtitle">Human Skeleton Detection · TensorFlow.js</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="status-cluster">
+          <div class="status-item">
+            <span class="status-dot" id="model-dot"></span>
+            <span class="status-label" id="model-label">LOADING MODEL</span>
+          </div>
+          <div class="status-item">
+            <span class="status-dot cam-dot" id="cam-dot"></span>
+            <span class="status-label" id="cam-label">CAMERA OFF</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+
+      <!-- Left column: Video + Canvas -->
+      <section class="viewer-panel">
+
+        <div class="video-frame" id="video-frame">
+          <!-- Corner brackets -->
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+
+          <video id="webcam" autoplay muted playsinline></video>
+          <canvas id="pose-canvas"></canvas>
+
+          <!-- HUD overlays -->
+          <div class="hud-top-left">
+            <span id="hud-fps">FPS: —</span>
+            <span id="hud-poses">POSES: 0</span>
+          </div>
+          <div class="hud-top-right">
+            <span id="hud-model-type">MobileNet v1</span>
+          </div>
+          <div class="hud-bottom" id="hud-bottom">
+            <span class="hud-idle-msg">▶ START CAMERA TO BEGIN DETECTION</span>
+          </div>
+
+          <!-- Scan animation -->
+          <div class="scan-line" id="scan-line"></div>
+        </div>
+
+        <!-- Controls bar -->
+        <div class="controls-bar">
+          <button id="btn-start" class="btn btn-start">▶ Start Camera</button>
+          <button id="btn-stop" class="btn btn-stop" disabled>■ Stop</button>
+          <button id="btn-snapshot" class="btn btn-snap" disabled>◉ Snapshot</button>
+
+          <div class="control-group">
+            <label>Min Confidence</label>
+            <input type="range" id="conf-range" min="10" max="90" value="50" step="5" />
+            <span id="conf-val">50%</span>
+          </div>
+
+          <div class="control-group">
+            <label>Max Poses</label>
+            <select id="max-poses">
+              <option value="1" selected>1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="5">5</option>
+            </select>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Right column: Data panels -->
+      <aside class="data-panel">
+
+        <!-- Live Metrics -->
+        <div class="panel-card" id="metrics-card">
+          <div class="panel-title">
+            <span class="panel-icon">◈</span> Live Metrics
+          </div>
+          <div class="metrics-grid">
+            <div class="metric-box">
+              <div class="metric-val" id="m-fps">—</div>
+              <div class="metric-lbl">FPS</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-val" id="m-poses">0</div>
+              <div class="metric-lbl">Poses</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-val" id="m-latency">—</div>
+              <div class="metric-lbl">Latency ms</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-val" id="m-keypoints">—</div>
+              <div class="metric-lbl">Keypoints</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Keypoint Table -->
+        <div class="panel-card" id="keypoint-card">
+          <div class="panel-title">
+            <span class="panel-icon">◈</span> Keypoint Data
+            <span class="panel-badge" id="kp-count-badge">0 / 17</span>
+          </div>
+          <div class="keypoint-table-wrap">
+            <table id="keypoint-table">
+              <thead>
+                <tr>
+                  <th>Joint</th>
+                  <th>X</th>
+                  <th>Y</th>
+                  <th>Conf</th>
+                </tr>
+              </thead>
+              <tbody id="keypoint-body">
+                <tr><td colspan="4" class="table-empty">Waiting for pose…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Pose Angles -->
+        <div class="panel-card" id="angles-card">
+          <div class="panel-title">
+            <span class="panel-icon">◈</span> Body Angles
+          </div>
+          <div id="angles-list" class="angles-list">
+            <p class="panel-placeholder">Detect a pose to calculate joint angles.</p>
+          </div>
+        </div>
+
+        <!-- Snapshots -->
+        <div class="panel-card" id="snapshot-card">
+          <div class="panel-title">
+            <span class="panel-icon">◈</span> Snapshots
+            <button id="btn-clear-snaps" class="btn-tiny">CLR</button>
+          </div>
+          <div id="snapshot-grid" class="snapshot-grid">
+            <p class="panel-placeholder">No snapshots yet.</p>
+          </div>
+        </div>
+
+      </aside>
+
+    </main>
+
+    <!-- TensorFlow.js + PoseNet -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet@2.2.2/dist/posenet.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
