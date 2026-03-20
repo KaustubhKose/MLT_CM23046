@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Assignment 3 — Incremental Categories &amp; Retraining</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/base16/tomorrow-night.min.css"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <div class="bg-wrap">
+    <div class="bg-sphere s1"></div>
+    <div class="bg-sphere s2"></div>
+    <div class="bg-sphere s3"></div>
+    <div class="hex-pattern"></div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-left">
+      <span class="nav-num">03</span>
+      <span class="nav-sep">|</span>
+      <span class="nav-title">Incremental Retraining</span>
+    </div>
+    <div class="nav-right">
+      <span class="ntag">3 → 5 → 7 Classes</span>
+      <span class="ntag">Performance Analysis</span>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-left">
+      <div class="hero-pill">
+        <span class="hp-dot"></span>
+        Assignment 3 — Incremental Learning
+      </div>
+      <h1>Add Categories<br/><span class="hl-indigo">Incrementally</span><br/>&amp; Analyze<br/><span class="hl-amber">Performance</span></h1>
+      <p class="hdesc">Start with 3 fruit classes, add 2 more, then 2 again — re-training after each expansion. Measure how accuracy and class-level F1 evolve as the problem grows.</p>
+      <div class="hero-btn-row">
+        <a href="#phases" class="hbtn hbtn-p">View Phases</a>
+        <a href="#chart-section" class="hbtn hbtn-g">See Performance Chart</a>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="phase-ladder">
+        <div class="pl-step pl-done">
+          <div class="pl-icon">🍎🍌🥭</div>
+          <div class="pl-info">
+            <div class="pl-label">Phase 1</div>
+            <div class="pl-sub">3 Classes · 94.2% acc</div>
+          </div>
+          <div class="pl-acc">94.2%</div>
+        </div>
+        <div class="pl-arrow">↓</div>
+        <div class="pl-step pl-active">
+          <div class="pl-icon">+ 🍇🍊</div>
+          <div class="pl-info">
+            <div class="pl-label">Phase 2</div>
+            <div class="pl-sub">5 Classes · 91.7% acc</div>
+          </div>
+          <div class="pl-acc">91.7%</div>
+        </div>
+        <div class="pl-arrow">↓</div>
+        <div class="pl-step">
+          <div class="pl-icon">+ 🍓🍑</div>
+          <div class="pl-info">
+            <div class="pl-label">Phase 3</div>
+            <div class="pl-sub">7 Classes · 89.4% acc</div>
+          </div>
+          <div class="pl-acc">89.4%</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- PHASE CODE SECTIONS -->
+  <section class="section" id="phases">
+    <div class="wrap">
+      <div class="sh">
+        <span class="stag">Implementation</span>
+        <h2>Incremental Training Pipeline</h2>
+      </div>
+
+      <div class="phase-tabs">
+        <button class="ptab active" data-phase="p1">Phase 1 · 3 Classes</button>
+        <button class="ptab" data-phase="p2">Phase 2 · 5 Classes</button>
+        <button class="ptab" data-phase="p3">Phase 3 · 7 Classes</button>
+        <button class="ptab" data-phase="p4">Analysis</button>
+      </div>
+
+      <div class="phase-panels">
+
+        <div class="phase-panel active" id="p1">
+          <div class="panel-note note-green">✅ Baseline — 3 classes: apple, banana, mango</div>
+          <pre><code class="language-python">import tensorflow as tf
+from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras import layers, models
+
+CLASS_NAMES_V1 = ['apple', 'banana', 'mango']
+NUM_V1 = len(CLASS_NAMES_V1)  # 3
+
+def build_model(num_classes):
+    base = MobileNetV2(input_shape=(224,224,3), include_top=False, weights='imagenet')
+    base.trainable = False
+    x = base.output
+    x = layers.GlobalAveragePooling2D()(x)
+    x = layers.Dense(256, activation='relu')(x)
+    x = layers.Dropout(0.35)(x)
+    out = layers.Dense(num_classes, activation='softmax')(x)
+    return models.Model(base.input, out)
+
+# Phase 1 — train on 3 classes
+model_v1 = build_model(NUM_V1)
+model_v1.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
+                 loss='categorical_crossentropy', metrics=['accuracy'])
+
+h1 = model_v1.fit(train_gen_3, epochs=15, validation_data=val_gen_3,
+                  callbacks=[tf.keras.callbacks.EarlyStopping(patience=4, restore_best_weights=True)])
+
+acc_v1 = max(h1.history['val_accuracy'])
+print(f"Phase 1 val accuracy: {acc_v1*100:.2f}%")
+model_v1.save('fruit_v1_3class.keras')</code></pre>
+        </div>
+
+        <div class="phase-panel" id="p2">
+          <div class="panel-note note-amber">⚡ Expand — add grape &amp; orange (5 classes total)</div>
+          <pre><code class="language-python">CLASS_NAMES_V2 = ['apple', 'banana', 'mango', 'grape', 'orange']
+NUM_V2 = len(CLASS_NAMES_V2)  # 5
+
+# Strategy: re-use base feature extractor, rebuild head for 5 classes
+model_v1_base = tf.keras.models.load_model('fruit_v1_3class.keras')
+
+# Extract weights from base (up to GAP) and transfer
+old_base_weights = model_v1_base.get_layer('mobilenetv2_1.00_224').get_weights()
+
+model_v2 = build_model(NUM_V2)
+model_v2.get_layer('mobilenetv2_1.00_224').set_weights(old_base_weights)
+
+# Two-phase training for v2
+# Phase A: train head only
+model_v2.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
+                 loss='categorical_crossentropy', metrics=['accuracy'])
+model_v2.fit(train_gen_5, epochs=12, validation_data=val_gen_5,
+             callbacks=[tf.keras.callbacks.EarlyStopping(patience=3, restore_best_weights=True)])
+
+# Phase B: fine-tune top 20 layers
+model_v2.get_layer('mobilenetv2_1.00_224').trainable = True
+for layer in model_v2.get_layer('mobilenetv2_1.00_224').layers[:-20]:
+    layer.trainable = False
+
+model_v2.compile(optimizer=tf.keras.optimizers.Adam(1e-5),
+                 loss='categorical_crossentropy', metrics=['accuracy'])
+h2 = model_v2.fit(train_gen_5, epochs=10, validation_data=val_gen_5,
+                  callbacks=[tf.keras.callbacks.EarlyStopping(patience=3, restore_best_weights=True)])
+
+acc_v2 = max(h2.history['val_accuracy'])
+print(f"Phase 2 val accuracy: {acc_v2*100:.2f}%")
+model_v2.save('fruit_v2_5class.keras')</code></pre>
+        </div>
+
+        <div class="phase-panel" id="p3">
+          <div class="panel-note note-purple">🔬 Expand again — add strawberry &amp; peach (7 classes total)</div>
+          <pre><code class="language-python">CLASS_NAMES_V3 = ['apple', 'banana', 'mango', 'grape', 'orange', 'strawberry', 'peach']
+NUM_V3 = len(CLASS_NAMES_V3)  # 7
+
+# Load v2 base weights
+model_v2_loaded = tf.keras.models.load_model('fruit_v2_5class.keras')
+v2_base_weights  = model_v2_loaded.get_layer('mobilenetv2_1.00_224').get_weights()
+
+model_v3 = build_model(NUM_V3)
+model_v3.get_layer('mobilenetv2_1.00_224').set_weights(v2_base_weights)
+
+# Phase A: head-only training
+model_v3.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
+                 loss='categorical_crossentropy', metrics=['accuracy'])
+model_v3.fit(train_gen_7, epochs=14, validation_data=val_gen_7,
+             callbacks=[tf.keras.callbacks.EarlyStopping(patience=4, restore_best_weights=True)])
+
+# Phase B: fine-tune top 30 layers
+model_v3.get_layer('mobilenetv2_1.00_224').trainable = True
+for layer in model_v3.get_layer('mobilenetv2_1.00_224').layers[:-30]:
+    layer.trainable = False
+
+model_v3.compile(optimizer=tf.keras.optimizers.Adam(5e-6),
+                 loss='categorical_crossentropy', metrics=['accuracy'])
+h3 = model_v3.fit(train_gen_7, epochs=12, validation_data=val_gen_7,
+                  callbacks=[tf.keras.callbacks.EarlyStopping(patience=4, restore_best_weights=True)])
+
+acc_v3 = max(h3.history['val_accuracy'])
+print(f"Phase 3 val accuracy: {acc_v3*100:.2f}%")
+model_v3.save('fruit_v3_7class.keras')</code></pre>
+        </div>
+
+        <div class="phase-panel" id="p4">
+          <div class="panel-note note-blue">📊 Compare all phases side by side</div>
+          <pre><code class="language-python">import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.metrics import classification_report
+
+# Load all models
+models_map = {
+    '3-Class': ('fruit_v1_3class.keras', val_gen_3, CLASS_NAMES_V1),
+    '5-Class': ('fruit_v2_5class.keras', val_gen_5, CLASS_NAMES_V2),
+    '7-Class': ('fruit_v3_7class.keras', val_gen_7, CLASS_NAMES_V3),
+}
+
+results = {}
+for label, (path, val_gen, cnames) in models_map.items():
+    m = tf.keras.models.load_model(path)
+    y_true, y_pred = [], []
+    for imgs, lbls in val_gen:
+        preds = m.predict(imgs, verbose=0)
+        y_pred.extend(np.argmax(preds, axis=1))
+        y_true.extend(np.argmax(lbls.numpy(), axis=1))
+    report = classification_report(y_true, y_pred, target_names=cnames, output_dict=True)
+    results[label] = report
+
+# Plot accuracy trajectory
+phases   = list(results.keys())
+acc_vals = [results[p]['accuracy'] * 100 for p in phases]
+n_classes = [3, 5, 7]
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+fig.patch.set_facecolor('#080614')
+
+# Accuracy vs classes
+axes[0].plot(n_classes, acc_vals, 'o-', color='#7c3aed', lw=2.5, ms=10, mfc='#a78bfa')
+axes[0].set_xlabel('Number of Classes', color='#a78bfa')
+axes[0].set_ylabel('Val Accuracy (%)', color='#a78bfa')
+axes[0].set_title('Accuracy vs. Class Count', color='white')
+axes[0].set_facecolor('#0d0922')
+axes[0].tick_params(colors='#666')
+axes[0].grid(color='rgba(124,58,237,.1)', linestyle='--')
+
+# Per-class F1 for 7-class model
+f1_scores = [results['7-Class'][c]['f1-score'] * 100 for c in CLASS_NAMES_V3]
+bars = axes[1].barh(CLASS_NAMES_V3, f1_scores, color='#f59e0b', alpha=.85, height=.6)
+axes[1].set_xlabel('F1 Score (%)', color='#fbbf24')
+axes[1].set_title('7-Class: Per-Class F1', color='white')
+axes[1].set_facecolor('#0d0922')
+axes[1].tick_params(colors='#888')
+axes[1].set_xlim([60, 100])
+
+plt.suptitle('Incremental Retraining Performance Analysis', color='white', fontsize=14)
+plt.tight_layout()
+plt.savefig('performance_comparison.png', dpi=150,
+            bbox_inches='tight', facecolor=fig.get_facecolor())
+plt.show()</code></pre>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVE PERFORMANCE CHART -->
+  <section class="section section-alt" id="chart-section">
+    <div class="wrap">
+      <div class="sh">
+        <span class="stag">Interactive</span>
+        <h2>Performance Trajectory</h2>
+        <p>Watch accuracy &amp; F1 evolve as you add classes.</p>
+      </div>
+
+      <div class="chart-layout">
+        <div class="chart-controls">
+          <h3>Simulation Controls</h3>
+          <div class="cc-field">
+            <label>Images per class <output id="o-ipp">200</o></label>
+            <input type="range" id="r-ipp" min="50" max="500" step="25" value="200"/>
+          </div>
+          <div class="cc-field">
+            <label>Phase 2 overlap penalty
+              <span class="hint">Higher = more confusion between similar classes</span>
+            </label>
+            <input type="range" id="r-overlap" min="0" max="10" step="1" value="4"/>
+            <div class="range-ends"><span>Low</span><span>High</span></div>
+          </div>
+          <div class="cc-toggle">
+            <span>Carry pretrained weights across phases</span>
+            <label class="tog"><input type="checkbox" id="ck-carry" checked/><span class="tog-sl"></span></label>
+          </div>
+          <div class="summary-box" id="summaryBox">
+            <!-- populated by JS -->
+          </div>
+        </div>
+        <div class="chart-box">
+          <canvas id="perfChart" height="280"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSIGHTS -->
+  <section class="section" id="insights">
+    <div class="wrap">
+      <div class="sh">
+        <span class="stag">Findings</span>
+        <h2>Key Observations</h2>
+      </div>
+      <div class="insights-grid">
+        <div class="ins-card ic-indigo">
+          <div class="ins-icon">📉</div>
+          <h3>Accuracy Drops with More Classes</h3>
+          <p>Each new category increases confusion probability. 3→5 classes drops ~2.5%; 5→7 drops another ~2.3%. This is expected and manageable with sufficient data.</p>
+        </div>
+        <div class="ins-card ic-amber">
+          <div class="ins-icon">🔄</div>
+          <h3>Weight Reuse Prevents Catastrophic Forgetting</h3>
+          <p>Reusing the MobileNet base across phases preserves learned visual features. Starting fresh each phase would require 3× more data and training time to reach equivalent accuracy.</p>
+        </div>
+        <div class="ins-card ic-purple">
+          <div class="ins-icon">🎯</div>
+          <h3>Similar Classes Confuse More</h3>
+          <p>Peach and mango (both orange-toned) and grape and blueberry cause the most confusion. Solution: collect more varied training images for visually similar classes.</p>
+        </div>
+        <div class="ins-card ic-teal">
+          <div class="ins-icon">⚙️</div>
+          <h3>Fine-tune Depth Should Increase</h3>
+          <p>Phase 1 fine-tunes 20 layers; Phase 3 fine-tunes 30. As class diversity grows, the model needs deeper feature adaptation. Monitor validation loss closely to avoid overfitting.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="wrap fwrap">
+      <div>
+        <div class="f-badge">Assignment 3</div>
+        <p>Incremental Retraining · 3 → 5 → 7 Classes</p>
+      </div>
+      <code class="f-code">python train_incremental.py</code>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

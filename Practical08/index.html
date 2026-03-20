@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Transfer Learning — MobileNet</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <!-- Highlight.js (syntax highlighting) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"/>
+
+  <!-- AOS (scroll animations) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css"/>
+
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <!-- ░░ NAVBAR ░░ -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <div class="nav-logo">
+        <span class="logo-dot"></span>
+        MobileNet<span class="logo-accent">TL</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#pipeline">Pipeline</a></li>
+        <li><a href="#code">Code</a></li>
+        <li><a href="#simulator">Simulator</a></li>
+        <li><a href="#concepts">Concepts</a></li>
+      </ul>
+      <a class="nav-cta" href="#simulator">Try It</a>
+    </div>
+  </nav>
+
+  <!-- ░░ HERO ░░ -->
+  <header class="hero" id="home">
+    <!-- Animated orbs -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="hero__noise"></div>
+
+    <div class="hero__content">
+      <div class="hero__badge" id="heroBadge">
+        <span class="badge-dot"></span>
+        TensorFlow · MobileNetV2 · Keras
+      </div>
+      <h1 class="hero__title" id="heroTitle">
+        Transfer<br/><span class="gradient-text">Learning</span>
+      </h1>
+      <p class="hero__sub" id="heroSub">
+        Retrain MobileNetV2 on custom fruit categories in minutes — not months. Leverage 1.2M ImageNet features, your data.
+      </p>
+      <div class="hero__actions" id="heroActions">
+        <a class="btn-primary" href="#pipeline">Explore Pipeline</a>
+        <a class="btn-ghost" href="#code">View Code</a>
+      </div>
+
+      <!-- Stats row -->
+      <div class="hero__stats" id="heroStats">
+        <div class="stat">
+          <span class="stat__num" data-target="97">0</span><span class="stat__unit">%</span>
+          <span class="stat__label">Val Accuracy</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat__num" data-target="3">0</span><span class="stat__unit">M+</span>
+          <span class="stat__label">Pretrained Params</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat__num" data-target="5">0</span><span class="stat__unit">x</span>
+          <span class="stat__label">Faster Training</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating fruit pills -->
+    <div class="fruit-pills">
+      <span class="fruit-pill" style="--d:0s">🍎 Apple</span>
+      <span class="fruit-pill" style="--d:.4s">🍌 Banana</span>
+      <span class="fruit-pill" style="--d:.8s">🍇 Grape</span>
+      <span class="fruit-pill" style="--d:1.2s">🥭 Mango</span>
+      <span class="fruit-pill" style="--d:1.6s">🍊 Orange</span>
+    </div>
+  </header>
+
+  <!-- ░░ PIPELINE ░░ -->
+  <section class="section" id="pipeline">
+    <div class="container">
+      <div class="section-header" data-aos="fade-up">
+        <span class="section-tag">Architecture</span>
+        <h2>How Transfer Learning Works</h2>
+        <p>Four stages from raw images to confident predictions.</p>
+      </div>
+
+      <div class="pipeline-grid">
+
+        <div class="pipe-card" data-aos="fade-up" data-aos-delay="0">
+          <div class="pipe-card__num">01</div>
+          <div class="pipe-card__icon-wrap dataset-icon">📦</div>
+          <h3>Dataset</h3>
+          <p>100+ images per class augmented with flips, rotations &amp; color jitter via <code>ImageDataGenerator</code>.</p>
+          <div class="pipe-card__tag">Input</div>
+        </div>
+
+        <div class="pipe-connector" data-aos="fade-up" data-aos-delay="50">
+          <div class="connector-line"></div>
+          <svg width="20" height="20" viewBox="0 0 20 20"><path d="M5 10h10M11 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+        </div>
+
+        <div class="pipe-card frozen" data-aos="fade-up" data-aos-delay="100">
+          <div class="pipe-card__num">02</div>
+          <div class="pipe-card__icon-wrap frozen-icon">🔒</div>
+          <h3>MobileNetV2 Base</h3>
+          <p>3.4M pretrained weights from ImageNet. All layers <strong>frozen</strong> — edge, texture, object detectors preserved.</p>
+          <div class="pipe-card__tag frozen-tag">Frozen</div>
+        </div>
+
+        <div class="pipe-connector" data-aos="fade-up" data-aos-delay="150">
+          <div class="connector-line"></div>
+          <svg width="20" height="20" viewBox="0 0 20 20"><path d="M5 10h10M11 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+        </div>
+
+        <div class="pipe-card trainable" data-aos="fade-up" data-aos-delay="200">
+          <div class="pipe-card__num">03</div>
+          <div class="pipe-card__icon-wrap train-icon">⚡</div>
+          <h3>Custom Head</h3>
+          <p>Dense(128) → ReLU → Dropout(0.3) → Softmax(N). Only these layers update during Phase 1.</p>
+          <div class="pipe-card__tag train-tag">Trainable</div>
+        </div>
+
+        <div class="pipe-connector" data-aos="fade-up" data-aos-delay="250">
+          <div class="connector-line"></div>
+          <svg width="20" height="20" viewBox="0 0 20 20"><path d="M5 10h10M11 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+        </div>
+
+        <div class="pipe-card output" data-aos="fade-up" data-aos-delay="300">
+          <div class="pipe-card__num">04</div>
+          <div class="pipe-card__icon-wrap output-icon">🍌</div>
+          <h3>Prediction</h3>
+          <p>Softmax scores across all classes. Argmax gives the label; top-k for ranked output.</p>
+          <div class="pipe-card__tag output-tag">Output</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ░░ CODE ░░ -->
+  <section class="section section-dark" id="code">
+    <div class="container">
+      <div class="section-header" data-aos="fade-up">
+        <span class="section-tag">Implementation</span>
+        <h2>Code Walkthrough</h2>
+        <p>Complete Python implementation in five steps.</p>
+      </div>
+
+      <div class="code-layout">
+        <!-- Sidebar tabs -->
+        <div class="code-sidebar" data-aos="fade-right">
+          <button class="stab active" data-tab="setup">
+            <span class="stab-num">01</span>
+            <span class="stab-label">Setup &amp; Data</span>
+          </button>
+          <button class="stab" data-tab="model">
+            <span class="stab-num">02</span>
+            <span class="stab-label">Build Model</span>
+          </button>
+          <button class="stab" data-tab="train">
+            <span class="stab-num">03</span>
+            <span class="stab-label">Phase 1 Train</span>
+          </button>
+          <button class="stab" data-tab="finetune">
+            <span class="stab-num">04</span>
+            <span class="stab-label">Fine-tune</span>
+          </button>
+          <button class="stab" data-tab="predict">
+            <span class="stab-num">05</span>
+            <span class="stab-label">Predict</span>
+          </button>
+        </div>
+
+        <!-- Code panels -->
+        <div class="code-panels" data-aos="fade-left">
+
+          <div class="code-panel active" id="tab-setup">
+            <div class="code-header">
+              <span class="code-lang">Python</span>
+              <button class="copy-btn" data-target="tab-setup">Copy</button>
+            </div>
+            <pre><code class="language-python">import tensorflow as tf
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+IMG_SIZE    = 224
+BATCH_SIZE  = 32
+NUM_CLASSES = 5   # apple, banana, grape, mango, orange
+DATA_DIR    = "fruits/"
+
+datagen = ImageDataGenerator(
+    rescale=1./255,
+    rotation_range=20,
+    width_shift_range=0.1,
+    horizontal_flip=True,
+    zoom_range=0.15,
+    validation_split=0.2
+)
+
+train_gen = datagen.flow_from_directory(
+    DATA_DIR,
+    target_size=(IMG_SIZE, IMG_SIZE),
+    batch_size=BATCH_SIZE,
+    subset="training"
+)
+val_gen = datagen.flow_from_directory(
+    DATA_DIR,
+    target_size=(IMG_SIZE, IMG_SIZE),
+    batch_size=BATCH_SIZE,
+    subset="validation"
+)</code></pre>
+          </div>
+
+          <div class="code-panel" id="tab-model">
+            <div class="code-header">
+              <span class="code-lang">Python</span>
+              <button class="copy-btn" data-target="tab-model">Copy</button>
+            </div>
+            <pre><code class="language-python">from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras import layers, models
+
+base = MobileNetV2(
+    input_shape=(IMG_SIZE, IMG_SIZE, 3),
+    include_top=False,     # drop ImageNet classifier
+    weights="imagenet"
+)
+base.trainable = False    # freeze all base layers
+
+inputs  = tf.keras.Input(shape=(IMG_SIZE, IMG_SIZE, 3))
+x       = base(inputs, training=False)
+x       = layers.GlobalAveragePooling2D()(x)
+x       = layers.Dense(128, activation="relu")(x)
+x       = layers.Dropout(0.3)(x)
+outputs = layers.Dense(NUM_CLASSES, activation="softmax")(x)
+
+model = models.Model(inputs, outputs)
+model.summary()</code></pre>
+          </div>
+
+          <div class="code-panel" id="tab-train">
+            <div class="code-header">
+              <span class="code-lang">Python</span>
+              <button class="copy-btn" data-target="tab-train">Copy</button>
+            </div>
+            <pre><code class="language-python">model.compile(
+    optimizer=tf.keras.optimizers.Adam(1e-3),
+    loss="categorical_crossentropy",
+    metrics=["accuracy"]
+)
+
+callbacks = [
+    tf.keras.callbacks.EarlyStopping(
+        patience=3,
+        restore_best_weights=True
+    ),
+    tf.keras.callbacks.ReduceLROnPlateau(
+        factor=0.5, patience=2
+    )
+]
+
+history = model.fit(
+    train_gen,
+    epochs=10,
+    validation_data=val_gen,
+    callbacks=callbacks
+)</code></pre>
+          </div>
+
+          <div class="code-panel" id="tab-finetune">
+            <div class="code-header">
+              <span class="code-lang">Python</span>
+              <button class="copy-btn" data-target="tab-finetune">Copy</button>
+            </div>
+            <pre><code class="language-python"># Unfreeze top 30 layers of base model
+base.trainable = True
+
+for layer in base.layers[:-30]:
+    layer.trainable = False   # keep lower layers frozen
+
+# Re-compile with 100x smaller learning rate
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(1e-5),
+    loss="categorical_crossentropy",
+    metrics=["accuracy"]
+)
+
+history_ft = model.fit(
+    train_gen,
+    epochs=10,
+    validation_data=val_gen,
+    callbacks=callbacks
+)</code></pre>
+          </div>
+
+          <div class="code-panel" id="tab-predict">
+            <div class="code-header">
+              <span class="code-lang">Python</span>
+              <button class="copy-btn" data-target="tab-predict">Copy</button>
+            </div>
+            <pre><code class="language-python">import numpy as np
+from tensorflow.keras.preprocessing import image
+
+CLASS_NAMES = ["apple", "banana", "grape", "mango", "orange"]
+
+def predict(img_path):
+    img   = image.load_img(img_path, target_size=(IMG_SIZE, IMG_SIZE))
+    x     = image.img_to_array(img) / 255.0
+    x     = np.expand_dims(x, 0)
+    probs = model.predict(x)[0]
+    idx   = np.argmax(probs)
+    print(f"{CLASS_NAMES[idx]}  {probs[idx]*100:.1f}%")
+
+predict("test_banana.jpg")   # → banana  97.3%
+model.save("fruit_classifier.keras")</code></pre>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ░░ SIMULATOR ░░ -->
+  <section class="section" id="simulator">
+    <div class="container">
+      <div class="section-header" data-aos="fade-up">
+        <span class="section-tag">Interactive</span>
+        <h2>Training Simulator</h2>
+        <p>Tune parameters and see predicted accuracy update live.</p>
+      </div>
+
+      <div class="sim-layout">
+
+        <!-- Controls -->
+        <div class="sim-controls-card" data-aos="fade-right">
+          <h3>Parameters</h3>
+
+          <div class="sim-field">
+            <div class="sim-field-header">
+              <label>Images per class</label>
+              <output id="imgOut" class="sim-value">150</output>
+            </div>
+            <input type="range" id="imgCount" min="20" max="500" step="10" value="150" class="modern-range"/>
+            <div class="range-labels"><span>20</span><span>500</span></div>
+          </div>
+
+          <div class="sim-field">
+            <div class="sim-field-header">
+              <label>Training Epochs</label>
+              <output id="epochOut" class="sim-value">10</output>
+            </div>
+            <input type="range" id="epochCount" min="3" max="30" step="1" value="10" class="modern-range"/>
+            <div class="range-labels"><span>3</span><span>30</span></div>
+          </div>
+
+          <div class="sim-toggle-row">
+            <span>Fine-tune top layers</span>
+            <label class="switch">
+              <input type="checkbox" id="ftCheck" checked/>
+              <span class="switch-track">
+                <span class="switch-thumb"></span>
+              </span>
+            </label>
+          </div>
+
+          <div class="sim-meta">
+            <div class="sim-meta-item">
+              <span class="meta-label">Phase</span>
+              <span class="meta-val" id="phaseVal">Phase 1 + Fine-tune</span>
+            </div>
+            <div class="sim-meta-item">
+              <span class="meta-label">Est. GPU Time</span>
+              <span class="meta-val" id="timeVal">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div class="sim-results-card" data-aos="fade-left">
+          <h3>Live Results</h3>
+
+          <div class="acc-display">
+            <canvas id="accGauge" width="200" height="200"></canvas>
+            <div class="acc-center">
+              <span class="acc-num" id="accNum">0</span>
+              <span class="acc-pct">%</span>
+              <span class="acc-label">Val Accuracy</span>
+            </div>
+          </div>
+
+          <div class="class-bars" id="classBars">
+            <!-- JS-populated -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ░░ CONCEPTS ░░ -->
+  <section class="section section-dark" id="concepts">
+    <div class="container">
+      <div class="section-header" data-aos="fade-up">
+        <span class="section-tag">Fundamentals</span>
+        <h2>Key Concepts</h2>
+        <p>Six ideas that make transfer learning so powerful.</p>
+      </div>
+
+      <div class="concepts-grid">
+
+        <div class="concept-card" data-aos="fade-up" data-aos-delay="0">
+          <div class="concept-icon">🧩</div>
+          <h3>Depthwise Separable Conv</h3>
+          <p>MobileNet splits convolution into a depthwise spatial pass and a pointwise channel-mixing pass — 8–9× fewer operations than standard convolution at similar accuracy.</p>
+          <div class="concept-footer">
+            <span class="concept-tag">Efficiency</span>
+          </div>
+        </div>
+
+        <div class="concept-card" data-aos="fade-up" data-aos-delay="80">
+          <div class="concept-icon">🗄️</div>
+          <h3>Feature Vector</h3>
+          <p>After Global Average Pooling, the 7×7×1024 feature maps collapse to a flat 1024-d vector — a compact fingerprint that your head learns to classify.</p>
+          <div class="concept-footer">
+            <span class="concept-tag">Architecture</span>
+          </div>
+        </div>
+
+        <div class="concept-card" data-aos="fade-up" data-aos-delay="160">
+          <div class="concept-icon">📉</div>
+          <h3>Two-phase Training</h3>
+          <p>Phase 1 trains only the custom head at a high learning rate. Phase 2 fine-tunes the top base layers at LR×100 smaller. Skip Phase 1 and you risk destroying pretrained features.</p>
+          <div class="concept-footer">
+            <span class="concept-tag">Training</span>
+          </div>
+        </div>
+
+        <div class="concept-card" data-aos="fade-up" data-aos-delay="0">
+          <div class="concept-icon">🔄</div>
+          <h3>Data Augmentation</h3>
+          <p>Artificially expands your training set via geometric and colour transforms. Dramatically reduces overfitting when you have fewer than ~1000 images per class.</p>
+          <div class="concept-footer">
+            <span class="concept-tag">Data</span>
+          </div>
+        </div>
+
+        <div class="concept-card" data-aos="fade-up" data-aos-delay="80">
+          <div class="concept-icon">🎯</div>
+          <h3>Softmax Output</h3>
+          <p>Converts raw logits into a probability distribution that sums to 1. The argmax gives the predicted label; top-k gives ranked alternatives for confidence-aware pipelines.</p>
+          <div class="concept-footer">
+            <span class="concept-tag">Inference</span>
+          </div>
+        </div>
+
+        <div class="concept-card" data-aos="fade-up" data-aos-delay="160">
+          <div class="concept-icon">⏱️</div>
+          <h3>Early Stopping</h3>
+          <p>Monitors validation loss and halts training when improvement stalls. Automatically restores the best checkpoint — removes the need for manual epoch tuning.</p>
+          <div class="concept-footer">
+            <span class="concept-tag">Regularization</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ░░ FOOTER ░░ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div class="nav-logo">
+            <span class="logo-dot"></span>
+            MobileNet<span class="logo-accent">TL</span>
+          </div>
+          <p>Transfer Learning with MobileNetV2 on custom image datasets.</p>
+        </div>
+        <div class="footer-meta">
+          <span>TensorFlow 2 · Keras · ImageNet weights</span>
+          <code class="footer-cmd">python train.py</code>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ░░ CDN SCRIPTS ░░ -->
+  <!-- GSAP (animations) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <!-- Chart.js (gauge/bar charts) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <!-- Highlight.js (syntax highlighting) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <!-- AOS (scroll reveal) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+
+  <!-- App -->
+  <script src="main.js"></script>
+</body>
+</html>

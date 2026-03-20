@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Assignment 1 — Retrain MobileNet · 3 Categories</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <!-- Animated BG -->
+  <div class="bg-canvas">
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+    <div class="bg-grid"></div>
+  </div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-pill">
+      <span class="nav-badge">A1</span>
+      MobileNet Retraining
+    </div>
+    <div class="nav-tags">
+      <span class="tag">TensorFlow</span>
+      <span class="tag">MobileNetV2</span>
+      <span class="tag">3 Classes</span>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-eyebrow">
+      <span class="eyebrow-dot"></span>
+      Assignment 1 — Transfer Learning
+    </div>
+    <h1 class="hero-title">Retrain <span class="hl">MobileNet</span><br/>for 3 Custom<br/>Fruit Categories</h1>
+    <p class="hero-desc">Leverage ImageNet pretrained weights to classify Apple, Banana, and Mango using only 100–300 images per class via transfer learning.</p>
+
+    <div class="hero-chips">
+      <div class="chip chip-apple">🍎 Apple</div>
+      <div class="chip chip-banana">🍌 Banana</div>
+      <div class="chip chip-mango">🥭 Mango</div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-n" id="cnt-classes">3</div><div class="stat-l">Categories</div></div>
+      <div class="stat-box"><div class="stat-n" id="cnt-acc">94</div><span class="stat-u">%</span><div class="stat-l">Val Accuracy</div></div>
+      <div class="stat-box"><div class="stat-n" id="cnt-params">3.4</div><span class="stat-u">M</span><div class="stat-l">Pretrained Params</div></div>
+    </div>
+  </header>
+
+  <!-- STEPS -->
+  <section class="section" id="steps">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-tag">Workflow</span>
+        <h2>Implementation Steps</h2>
+      </div>
+      <div class="steps-list">
+
+        <div class="step-card" data-step="01">
+          <div class="step-icon">📁</div>
+          <div class="step-body">
+            <h3>Organize Dataset</h3>
+            <p>Structure images into <code>fruits/apple/</code>, <code>fruits/banana/</code>, <code>fruits/mango/</code>. Minimum 100 images per class.</p>
+            <pre><code class="language-bash">fruits/
+├── apple/    ← 150 images
+├── banana/   ← 142 images
+└── mango/    ← 138 images</code></pre>
+          </div>
+        </div>
+
+        <div class="step-card" data-step="02">
+          <div class="step-icon">⚙️</div>
+          <div class="step-body">
+            <h3>Data Pipeline</h3>
+            <p>Augment and batch images with <code>ImageDataGenerator</code>. 80/20 train-validation split.</p>
+            <pre><code class="language-python">from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+gen = ImageDataGenerator(
+    rescale=1./255,
+    rotation_range=25,
+    width_shift_range=0.15,
+    height_shift_range=0.15,
+    shear_range=0.1,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode='nearest',
+    validation_split=0.2
+)
+
+train_ds = gen.flow_from_directory(
+    'fruits/', target_size=(224, 224),
+    batch_size=32, subset='training',
+    class_mode='categorical'
+)
+val_ds = gen.flow_from_directory(
+    'fruits/', target_size=(224, 224),
+    batch_size=32, subset='validation',
+    class_mode='categorical'
+)</code></pre>
+          </div>
+        </div>
+
+        <div class="step-card" data-step="03">
+          <div class="step-icon">🏗️</div>
+          <div class="step-body">
+            <h3>Build Model</h3>
+            <p>Load MobileNetV2 without its top, freeze base, attach custom 3-class head.</p>
+            <pre><code class="language-python">import tensorflow as tf
+from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras import layers, models
+
+# Load pretrained base (frozen)
+base = MobileNetV2(input_shape=(224, 224, 3),
+                   include_top=False,
+                   weights='imagenet')
+base.trainable = False
+
+# Custom 3-class classifier head
+inputs = tf.keras.Input(shape=(224, 224, 3))
+x = base(inputs, training=False)
+x = layers.GlobalAveragePooling2D()(x)
+x = layers.BatchNormalization()(x)
+x = layers.Dense(256, activation='relu')(x)
+x = layers.Dropout(0.4)(x)
+x = layers.Dense(64, activation='relu')(x)
+x = layers.Dropout(0.2)(x)
+outputs = layers.Dense(3, activation='softmax')(x)
+
+model = models.Model(inputs, outputs)
+print(f"Trainable params: {model.count_params():,}")</code></pre>
+          </div>
+        </div>
+
+        <div class="step-card" data-step="04">
+          <div class="step-icon">🚀</div>
+          <div class="step-body">
+            <h3>Train &amp; Fine-tune</h3>
+            <p>Phase 1 trains the head only. Phase 2 unfreezes top-30 base layers with a lower LR.</p>
+            <pre><code class="language-python"># Phase 1: Train head only
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(1e-3),
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+cb = [
+    tf.keras.callbacks.EarlyStopping(patience=4, restore_best_weights=True),
+    tf.keras.callbacks.ModelCheckpoint('best_model.keras', save_best_only=True)
+]
+h1 = model.fit(train_ds, epochs=15, validation_data=val_ds, callbacks=cb)
+
+# Phase 2: Fine-tune top 30 layers
+base.trainable = True
+for layer in base.layers[:-30]:
+    layer.trainable = False
+
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(1e-5),
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+h2 = model.fit(train_ds, epochs=10, validation_data=val_ds, callbacks=cb)</code></pre>
+          </div>
+        </div>
+
+        <div class="step-card" data-step="05">
+          <div class="step-icon">🎯</div>
+          <div class="step-body">
+            <h3>Predict &amp; Save</h3>
+            <p>Run inference on a single image and export the final model.</p>
+            <pre><code class="language-python">import numpy as np
+from tensorflow.keras.preprocessing import image
+
+CLASS_NAMES = ['apple', 'banana', 'mango']
+
+def classify(img_path):
+    img = image.load_img(img_path, target_size=(224, 224))
+    arr = image.img_to_array(img) / 255.0
+    arr = np.expand_dims(arr, 0)
+    preds = model.predict(arr, verbose=0)[0]
+    top   = np.argmax(preds)
+    return {
+        'label': CLASS_NAMES[top],
+        'confidence': float(preds[top]),
+        'all_scores': dict(zip(CLASS_NAMES, preds.tolist()))
+    }
+
+result = classify('test.jpg')
+print(result)
+# → {'label': 'mango', 'confidence': 0.973, ...}
+
+model.save('mobilenet_3class.keras')</code></pre>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVE SIMULATOR -->
+  <section class="section section-alt" id="simulator">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-tag">Interactive</span>
+        <h2>Training Simulator</h2>
+        <p>Estimate accuracy based on dataset size and epochs.</p>
+      </div>
+
+      <div class="sim-grid">
+        <div class="sim-controls">
+          <div class="ctrl-group">
+            <label>Images per class <output id="o-imgs">150</o></label>
+            <input type="range" id="r-imgs" min="30" max="400" step="10" value="150"/>
+          </div>
+          <div class="ctrl-group">
+            <label>Epochs <output id="o-ep">15</o></label>
+            <input type="range" id="r-ep" min="5" max="30" step="1" value="15"/>
+          </div>
+          <div class="ctrl-group toggle-group">
+            <span>Fine-tune Phase 2</span>
+            <label class="tog">
+              <input type="checkbox" id="ck-ft" checked/>
+              <span class="tog-sl"></span>
+            </label>
+          </div>
+          <div class="ctrl-group toggle-group">
+            <span>Batch Norm in head</span>
+            <label class="tog">
+              <input type="checkbox" id="ck-bn" checked/>
+              <span class="tog-sl"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="sim-result">
+          <div class="gauge-wrap">
+            <canvas id="gauge1" width="220" height="220"></canvas>
+            <div class="gauge-center">
+              <span class="g-num" id="g-acc">0</span>
+              <span class="g-pct">%</span>
+              <span class="g-lbl">Val Accuracy</span>
+            </div>
+          </div>
+          <div class="result-chips">
+            <div class="r-chip"><span class="rc-l">Est. Time</span><span class="rc-v" id="r-time">—</span></div>
+            <div class="r-chip"><span class="rc-l">Loss</span><span class="rc-v" id="r-loss">—</span></div>
+            <div class="r-chip"><span class="rc-l">Phase</span><span class="rc-v" id="r-phase">—</span></div>
+          </div>
+
+          <div class="class-scores" id="classScores"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONCEPTS -->
+  <section class="section" id="concepts">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-tag">Theory</span>
+        <h2>Key Concepts</h2>
+      </div>
+      <div class="cards-grid">
+        <div class="info-card">
+          <span class="ic-icon">🧠</span>
+          <h3>Feature Reuse</h3>
+          <p>ImageNet training teaches MobileNet to detect edges → textures → object parts. These features transfer remarkably well to fruit images without any relearning.</p>
+        </div>
+        <div class="info-card">
+          <span class="ic-icon">🔒</span>
+          <h3>Layer Freezing</h3>
+          <p>Freezing the base prevents catastrophic forgetting of pretrained features when your dataset is small. Only your custom head learns in Phase 1.</p>
+        </div>
+        <div class="info-card">
+          <span class="ic-icon">📐</span>
+          <h3>Input Size</h3>
+          <p>MobileNetV2 expects 224×224×3 RGB input. All images are resized and normalized to [0, 1] before feeding. Channel order follows TensorFlow's RGB convention.</p>
+        </div>
+        <div class="info-card">
+          <span class="ic-icon">⚖️</span>
+          <h3>Class Balance</h3>
+          <p>Equal class sizes prevent bias. If classes are imbalanced, use <code>class_weight</code> argument in <code>model.fit()</code> to compensate during training.</p>
+        </div>
+        <div class="info-card">
+          <span class="ic-icon">🌊</span>
+          <h3>Dropout</h3>
+          <p>Two dropout layers (0.4 and 0.2) in the head randomly zero activations during training, forcing the model to learn redundant representations and reducing overfitting.</p>
+        </div>
+        <div class="info-card">
+          <span class="ic-icon">📉</span>
+          <h3>LR Schedule</h3>
+          <p>Phase 1 uses Adam at 1e-3 for fast head convergence. Phase 2 drops to 1e-5 — too high and you overwrite valuable base-layer features learned from ImageNet.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <div>
+        <div class="f-badge">Assignment 1</div>
+        <p>Retrain MobileNet · 3 Fruit Categories</p>
+      </div>
+      <code class="f-cmd">python train_3class.py</code>
+    </div>
+  </footer>
+
+  <!-- CDN Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
