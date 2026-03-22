@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Assignment 1 — Retrain MobileNet · 3 Categories</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <!-- ░ BACKGROUND -->
+  <div class="bg-layer">
+    <div class="bg-glow g1"></div>
+    <div class="bg-glow g2"></div>
+    <div class="bg-glow g3"></div>
+    <div class="dot-grid"></div>
+  </div>
+
+  <!-- ░ NAVBAR -->
+  <nav class="navbar" id="nav">
+    <div class="nav-inner">
+      <div class="nav-brand">
+        <span class="brand-tag">A1</span>
+        MobileNet<span class="brand-hl">Retrain</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#pipeline">Pipeline</a></li>
+        <li><a href="#code">Code</a></li>
+        <li><a href="#simulator">Simulator</a></li>
+        <li><a href="#concepts">Concepts</a></li>
+      </ul>
+      <a class="nav-cta" href="#simulator">Try Live</a>
+    </div>
+  </nav>
+
+  <!-- ░ HERO -->
+  <header class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-pulse"></span>
+        TensorFlow 2 · MobileNetV2 · Keras · ImageNet
+      </div>
+      <h1 class="hero-title">
+        Retrain<br/>
+        <span class="hero-hl">MobileNet</span><br/>
+        for 3 Custom<br/>Fruit Categories
+      </h1>
+      <p class="hero-sub">
+        Leverage 3.4M pretrained ImageNet weights to classify <strong>Apple</strong>, <strong>Banana</strong> &amp; <strong>Mango</strong> with as few as 100 images per class using transfer learning.
+      </p>
+      <div class="hero-actions">
+        <a href="#pipeline" class="btn-solid">View Pipeline</a>
+        <a href="#code" class="btn-outline">See Code</a>
+      </div>
+      <div class="hero-chips">
+        <div class="fruit-chip fc-a">🍎 Apple</div>
+        <div class="fruit-chip fc-b">🍌 Banana</div>
+        <div class="fruit-chip fc-m">🥭 Mango</div>
+      </div>
+    </div>
+    <div class="hero-stats-panel">
+      <div class="stat-card"><div class="sc-val" id="sv1">0</div><div class="sc-unit">classes</div><div class="sc-lbl">Categories</div></div>
+      <div class="stat-card"><div class="sc-val" id="sv2">0</div><div class="sc-unit">%</div><div class="sc-lbl">Val Accuracy</div></div>
+      <div class="stat-card"><div class="sc-val" id="sv3">0</div><div class="sc-unit">M+</div><div class="sc-lbl">Pretrained Params</div></div>
+      <div class="stat-card"><div class="sc-val" id="sv4">0</div><div class="sc-unit">min</div><div class="sc-lbl">Train Time (GPU)</div></div>
+    </div>
+  </header>
+
+  <!-- ░ PIPELINE -->
+  <section class="section" id="pipeline">
+    <div class="container">
+      <div class="sec-header">
+        <span class="sec-label">Workflow</span>
+        <h2>Transfer Learning Pipeline</h2>
+        <p>Five stages from raw images to deployed classifier.</p>
+      </div>
+      <div class="pipeline-flow">
+        <div class="pipe-node pn-1" data-aos>
+          <div class="pn-num">01</div>
+          <div class="pn-icon">📁</div>
+          <h3>Dataset</h3>
+          <p>Organize images into class folders. Minimum 100 per class, 80/20 split.</p>
+          <code>fruits/{apple,banana,mango}/</code>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node pn-2" data-aos>
+          <div class="pn-num">02</div>
+          <div class="pn-icon">🔄</div>
+          <h3>Augmentation</h3>
+          <p>Flip, rotate, zoom, color-jitter via <code>ImageDataGenerator</code>.</p>
+          <code>rescale · rotation · zoom</code>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node pn-3 pn-freeze" data-aos>
+          <div class="pn-num">03</div>
+          <div class="pn-icon">🔒</div>
+          <h3>Frozen Base</h3>
+          <p>MobileNetV2 without top. All weights frozen — ImageNet knowledge preserved.</p>
+          <code>trainable = False</code>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node pn-4 pn-train" data-aos>
+          <div class="pn-num">04</div>
+          <div class="pn-icon">⚡</div>
+          <h3>Custom Head</h3>
+          <p>GAP → Dense(256) → Dropout(0.4) → Softmax(3). Trainable layers.</p>
+          <code>3-class softmax</code>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node pn-5" data-aos>
+          <div class="pn-num">05</div>
+          <div class="pn-icon">🎯</div>
+          <h3>Fine-tune</h3>
+          <p>Unfreeze top-30 base layers, retrain with LR = 1e-5.</p>
+          <code>Adam(1e-5)</code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ░ CODE -->
+  <section class="section sec-alt" id="code">
+    <div class="container">
+      <div class="sec-header">
+        <span class="sec-label">Implementation</span>
+        <h2>Complete Code</h2>
+        <p>Full Python walkthrough — copy, run, train.</p>
+      </div>
+
+      <div class="code-layout">
+        <div class="code-sidebar">
+          <button class="stab active" data-tab="s-data">01 · Data Pipeline</button>
+          <button class="stab" data-tab="s-model">02 · Build Model</button>
+          <button class="stab" data-tab="s-phase1">03 · Phase 1 Train</button>
+          <button class="stab" data-tab="s-phase2">04 · Fine-tune</button>
+          <button class="stab" data-tab="s-infer">05 · Inference</button>
+        </div>
+
+        <div class="code-area">
+          <div class="code-panel active" id="s-data">
+            <div class="code-topbar"><span class="ct-lang">Python</span><button class="copy-btn" data-src="s-data">Copy</button></div>
+            <pre><code class="language-python">import tensorflow as tf
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+IMG_SIZE    = 224
+BATCH_SIZE  = 32
+NUM_CLASSES = 3   # apple, banana, mango
+DATA_DIR    = "fruits/"
+
+datagen = ImageDataGenerator(
+    rescale=1./255,
+    rotation_range=25,
+    width_shift_range=0.15,
+    height_shift_range=0.15,
+    shear_range=0.1,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    brightness_range=[0.8, 1.2],
+    fill_mode='nearest',
+    validation_split=0.2
+)
+
+train_gen = datagen.flow_from_directory(
+    DATA_DIR,
+    target_size=(IMG_SIZE, IMG_SIZE),
+    batch_size=BATCH_SIZE,
+    class_mode='categorical',
+    subset='training',
+    shuffle=True
+)
+val_gen = datagen.flow_from_directory(
+    DATA_DIR,
+    target_size=(IMG_SIZE, IMG_SIZE),
+    batch_size=BATCH_SIZE,
+    class_mode='categorical',
+    subset='validation',
+    shuffle=False
+)
+
+print("Classes:", train_gen.class_indices)
+# → {'apple': 0, 'banana': 1, 'mango': 2}</code></pre>
+          </div>
+
+          <div class="code-panel" id="s-model">
+            <div class="code-topbar"><span class="ct-lang">Python</span><button class="copy-btn" data-src="s-model">Copy</button></div>
+            <pre><code class="language-python">from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras import layers, models
+import tensorflow as tf
+
+def build_transfer_model(num_classes=3):
+    # Load pretrained base — NO top classifier
+    base = MobileNetV2(
+        input_shape=(224, 224, 3),
+        include_top=False,
+        weights='imagenet'
+    )
+    base.trainable = False   # freeze all 154 layers
+
+    # Custom classification head
+    inputs = tf.keras.Input(shape=(224, 224, 3))
+    x = base(inputs, training=False)
+    x = layers.GlobalAveragePooling2D()(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dense(256, activation='relu',
+                     kernel_regularizer=tf.keras.regularizers.l2(1e-4))(x)
+    x = layers.Dropout(0.4)(x)
+    x = layers.Dense(64, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    outputs = layers.Dense(num_classes, activation='softmax')(x)
+
+    model = models.Model(inputs, outputs)
+
+    trainable = sum(tf.size(w).numpy() for w in model.trainable_variables)
+    total     = sum(tf.size(w).numpy() for w in model.variables)
+    print(f"Trainable: {trainable:,} / Total: {total:,}")
+    return model
+
+model = build_transfer_model(NUM_CLASSES)</code></pre>
+          </div>
+
+          <div class="code-panel" id="s-phase1">
+            <div class="code-topbar"><span class="ct-lang">Python</span><button class="copy-btn" data-src="s-phase1">Copy</button></div>
+            <pre><code class="language-python"># Phase 1 — train only the custom head (frozen base)
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
+    loss='categorical_crossentropy',
+    metrics=['accuracy',
+             tf.keras.metrics.TopKCategoricalAccuracy(k=2, name='top2')]
+)
+
+callbacks = [
+    tf.keras.callbacks.EarlyStopping(
+        monitor='val_accuracy',
+        patience=5,
+        restore_best_weights=True,
+        verbose=1
+    ),
+    tf.keras.callbacks.ModelCheckpoint(
+        'checkpoints/best_phase1.keras',
+        save_best_only=True
+    ),
+    tf.keras.callbacks.ReduceLROnPlateau(
+        monitor='val_loss',
+        factor=0.5,
+        patience=3,
+        verbose=1
+    ),
+    tf.keras.callbacks.TensorBoard(log_dir='logs/phase1')
+]
+
+history1 = model.fit(
+    train_gen,
+    epochs=20,
+    validation_data=val_gen,
+    callbacks=callbacks,
+    verbose=1
+)
+print(f"Best val accuracy: {max(history1.history['val_accuracy'])*100:.2f}%")</code></pre>
+          </div>
+
+          <div class="code-panel" id="s-phase2">
+            <div class="code-topbar"><span class="ct-lang">Python</span><button class="copy-btn" data-src="s-phase2">Copy</button></div>
+            <pre><code class="language-python"># Phase 2 — fine-tune top layers of MobileNetV2 base
+base_model = model.layers[1]   # the MobileNetV2 layer
+base_model.trainable = True
+
+# Freeze all layers except the last 30
+for layer in base_model.layers[:-30]:
+    layer.trainable = False
+
+# Check how many are now trainable
+trainable_count = sum(1 for l in base_model.layers if l.trainable)
+print(f"Fine-tuning {trainable_count} base layers")
+
+# Recompile with a very small learning rate
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-5),
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+callbacks_ft = [
+    tf.keras.callbacks.EarlyStopping(
+        patience=5, restore_best_weights=True
+    ),
+    tf.keras.callbacks.ModelCheckpoint(
+        'checkpoints/best_finetuned.keras',
+        save_best_only=True
+    )
+]
+
+history2 = model.fit(
+    train_gen,
+    epochs=15,
+    validation_data=val_gen,
+    callbacks=callbacks_ft
+)
+model.save('mobilenet_3class_final.keras')
+print("Model saved ✓")</code></pre>
+          </div>
+
+          <div class="code-panel" id="s-infer">
+            <div class="code-topbar"><span class="ct-lang">Python</span><button class="copy-btn" data-src="s-infer">Copy</button></div>
+            <pre><code class="language-python">import numpy as np
+from tensorflow.keras.preprocessing import image
+import tensorflow as tf
+
+CLASS_NAMES = ['apple', 'banana', 'mango']
+
+# Load the saved model
+model = tf.keras.models.load_model('mobilenet_3class_final.keras')
+
+def predict_fruit(img_path, top_k=3):
+    """Predict fruit class with top-K confidence scores."""
+    img = image.load_img(img_path, target_size=(224, 224))
+    arr = image.img_to_array(img) / 255.0
+    arr = np.expand_dims(arr, axis=0)
+
+    probs   = model.predict(arr, verbose=0)[0]
+    top_idx = np.argsort(probs)[::-1][:top_k]
+
+    results = []
+    for idx in top_idx:
+        results.append({
+            'class':      CLASS_NAMES[idx],
+            'confidence': float(probs[idx]),
+            'percentage': f"{probs[idx]*100:.1f}%"
+        })
+    return results
+
+# Example
+results = predict_fruit("test_images/banana.jpg")
+for r in results:
+    print(f"{r['class']:10s} → {r['percentage']}")
+
+# banana     → 97.3%
+# apple      → 1.9%
+# mango      → 0.8%</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ░ SIMULATOR -->
+  <section class="section" id="simulator">
+    <div class="container">
+      <div class="sec-header">
+        <span class="sec-label">Interactive</span>
+        <h2>Training Simulator</h2>
+        <p>Tune parameters — see estimated accuracy update live.</p>
+      </div>
+      <div class="sim-grid">
+        <div class="sim-controls-card">
+          <h3>Hyperparameters</h3>
+          <div class="sim-field">
+            <div class="sfield-header"><label>Images per class</label><output id="o-img" class="sval">150</output></div>
+            <input type="range" id="r-img" min="30" max="500" step="10" value="150"/>
+            <div class="range-ends"><span>30</span><span>500</span></div>
+          </div>
+          <div class="sim-field">
+            <div class="sfield-header"><label>Epochs (Phase 1)</label><output id="o-ep" class="sval">20</output></div>
+            <input type="range" id="r-ep" min="5" max="40" step="1" value="20"/>
+            <div class="range-ends"><span>5</span><span>40</span></div>
+          </div>
+          <div class="sim-field">
+            <div class="sfield-header"><label>Dropout rate</label><output id="o-drop" class="sval">0.40</output></div>
+            <input type="range" id="r-drop" min="0.1" max="0.7" step="0.05" value="0.4"/>
+            <div class="range-ends"><span>0.1</span><span>0.7</span></div>
+          </div>
+          <div class="sim-toggles">
+            <div class="toggle-row">
+              <span>Fine-tune (Phase 2)</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="ck-ft" checked/>
+                <span class="ts-track"><span class="ts-thumb"></span></span>
+              </label>
+            </div>
+            <div class="toggle-row">
+              <span>Batch Normalization</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="ck-bn" checked/>
+                <span class="ts-track"><span class="ts-thumb"></span></span>
+              </label>
+            </div>
+            <div class="toggle-row">
+              <span>Data Augmentation</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="ck-aug" checked/>
+                <span class="ts-track"><span class="ts-thumb"></span></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="sim-results-card">
+          <h3>Results</h3>
+          <div class="gauge-container">
+            <canvas id="gaugeChart" width="220" height="220"></canvas>
+            <div class="gauge-center">
+              <span class="gauge-val" id="gaugeVal">0</span>
+              <span class="gauge-pct">%</span>
+              <span class="gauge-lbl">Val Accuracy</span>
+            </div>
+          </div>
+          <div class="results-meta">
+            <div class="rm-item"><span class="rm-l">Est. Train Time</span><strong id="rm-time">—</strong></div>
+            <div class="rm-item"><span class="rm-l">Val Loss</span><strong id="rm-loss">—</strong></div>
+            <div class="rm-item"><span class="rm-l">Training Phase</span><strong id="rm-phase">—</strong></div>
+          </div>
+          <div class="per-class-bars" id="pcBars"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ░ CONCEPTS -->
+  <section class="section sec-alt" id="concepts">
+    <div class="container">
+      <div class="sec-header">
+        <span class="sec-label">Theory</span>
+        <h2>Key Concepts</h2>
+      </div>
+      <div class="concepts-grid">
+        <div class="concept-card">
+          <span class="cc-icon">🧠</span>
+          <h3>Feature Reuse</h3>
+          <p>MobileNet's frozen layers detect edges → textures → shapes — features that transfer perfectly to fruit recognition without relearning.</p>
+        </div>
+        <div class="concept-card">
+          <span class="cc-icon">🔒</span>
+          <h3>Layer Freezing</h3>
+          <p>Prevents catastrophic forgetting. Frozen weights stay fixed; only the custom head trains in Phase 1, preserving all 3.4M ImageNet representations.</p>
+        </div>
+        <div class="concept-card">
+          <span class="cc-icon">📐</span>
+          <h3>224×224 Input</h3>
+          <p>MobileNetV2 requires exactly 224×224×3 RGB input, normalized to [0,1]. All images are resized automatically by ImageDataGenerator.</p>
+        </div>
+        <div class="concept-card">
+          <span class="cc-icon">⚖️</span>
+          <h3>Class Balance</h3>
+          <p>Equal class sizes prevent bias. For imbalanced datasets, use class_weight parameter in model.fit() to compensate during loss computation.</p>
+        </div>
+        <div class="concept-card">
+          <span class="cc-icon">💧</span>
+          <h3>Dropout</h3>
+          <p>Two dropout layers (0.4 and 0.2) randomly zero activations during training — forces redundant representations, drastically reduces overfitting.</p>
+        </div>
+        <div class="concept-card">
+          <span class="cc-icon">📉</span>
+          <h3>Two-Phase LR</h3>
+          <p>Phase 1 uses Adam(1e-3) for fast head convergence. Phase 2 drops to Adam(1e-5) to gently nudge base layers without overwriting ImageNet knowledge.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ░ FOOTER -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <span class="brand-tag">A1</span>
+        <div>
+          <p class="f-title">MobileNet Retraining — 3 Categories</p>
+          <p class="f-sub">TensorFlow 2 · MobileNetV2 · ImageNet pretrained</p>
+        </div>
+      </div>
+      <code class="f-cmd">python train_3class.py</code>
+    </div>
+  </footer>
+
+  <!-- CDN Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
