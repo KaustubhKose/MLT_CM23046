@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>👁️ VisionAI · Live Object Classifier</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ░░ BACKGROUND LAYERS ░░ -->
+  <div class="bg-base"></div>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+  <div class="bg-orb orb-4"></div>
+  <div class="bg-grid"></div>
+
+  <!-- ░░ APP SHELL ░░ -->
+  <div class="app">
+
+    <!-- ══ HEADER ══ -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo-mark">
+          <span class="logo-eye">👁</span>
+          <div class="logo-rings">
+            <div class="ring r1"></div>
+            <div class="ring r2"></div>
+          </div>
+        </div>
+        <div class="header-text">
+          <h1 class="site-title">Vision<span class="title-ai">AI</span></h1>
+          <p class="site-sub">MobileNetV2 · ImageNet-1K · Real-time</p>
+        </div>
+      </div>
+      <div class="header-chips">
+        <div class="hchip hchip-cyan"  id="backendChip">⚡ TF.js</div>
+        <div class="hchip hchip-lime"  id="modelChip">⏳ Loading…</div>
+        <div class="hchip hchip-pink" id="livechip">
+          <span class="blink-dot"></span> OFFLINE
+        </div>
+      </div>
+    </header>
+
+    <!-- ══ MAIN LAYOUT ══ -->
+    <main class="layout">
+
+      <!-- ┌─ LEFT: CAMERA ─┐ -->
+      <section class="cam-section">
+
+        <!-- Camera card -->
+        <div class="cam-card" id="camCard">
+          <div class="cam-card-top">
+            <span class="label-tag tag-cyan">📹 LIVE FEED</span>
+            <span class="res-badge" id="resBadge">— × —</span>
+          </div>
+
+          <div class="video-shell" id="videoShell">
+            <video id="webcam" autoplay playsinline muted></video>
+
+            <!-- HUD overlays -->
+            <div class="hud-scan" id="hudScan"></div>
+            <div class="hud-corner hc-tl"></div>
+            <div class="hud-corner hc-tr"></div>
+            <div class="hud-corner hc-bl"></div>
+            <div class="hud-corner hc-br"></div>
+            <div class="hud-fps" id="hudFps">⚡ — fps</div>
+            <canvas id="snapCanvas" style="display:none"></canvas>
+
+            <!-- Snapshot preview -->
+            <div class="snap-preview" id="snapPreview">
+              <img id="snapImg" alt="snap" />
+              <span class="snap-label">📸 Snapshot</span>
+            </div>
+
+            <!-- Startup overlay -->
+            <div class="cam-overlay" id="overlay">
+              <div class="ov-icon" id="ovIcon">🔬</div>
+              <h2 class="ov-title" id="ovTitle">Loading Model</h2>
+              <p class="ov-desc" id="ovDesc">Fetching MobileNetV2 from TF Hub…</p>
+              <div class="ov-spinner" id="ovSpinner">
+                <div class="sp-ring sp-a"></div>
+                <div class="sp-ring sp-b"></div>
+                <div class="sp-ring sp-c"></div>
+              </div>
+              <div class="ov-status" id="ovStatus">Initialising TF.js runtime</div>
+              <button class="btn btn-launch" id="startBtn" onclick="startCamera()" disabled>
+                🎥 Start Camera
+              </button>
+            </div>
+          </div>
+
+          <!-- Controls row -->
+          <div class="cam-controls">
+            <button class="btn btn-snap"   id="snapBtn"   onclick="doSnapshot()"  style="display:none">📸 Snap</button>
+            <button class="btn btn-stop"   id="stopBtn"   onclick="stopCamera()"  style="display:none">⏹ Stop</button>
+            <button class="btn btn-once"   id="singleBtn" onclick="singleInfer()" style="display:none">🔍 Once</button>
+
+            <div class="ctrl-group">
+              <span class="ctrl-lbl">🔄 Auto</span>
+              <div class="tog tog-on" id="togCont" onclick="toggleCont()"><div class="tog-thumb"></div></div>
+            </div>
+            <div class="ctrl-group">
+              <span class="ctrl-lbl">🪞 Flip</span>
+              <div class="tog tog-on" id="togFlip" onclick="toggleFlip()"><div class="tog-thumb"></div></div>
+            </div>
+            <div class="ctrl-group ctrl-slider">
+              <span class="ctrl-lbl">🎚 <span id="confLbl">10%</span></span>
+              <input type="range" id="confSlider" min="1" max="99" value="10" step="1" oninput="setConf(this.value)" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats row under camera -->
+        <div class="stats-row">
+          <div class="stat-pill pill-purple">
+            <span class="sp-val" id="sFrames">0</span>
+            <span class="sp-lbl">FRAMES</span>
+          </div>
+          <div class="stat-pill pill-cyan">
+            <span class="sp-val" id="sInf">—</span>
+            <span class="sp-lbl">INF ms</span>
+          </div>
+          <div class="stat-pill pill-orange">
+            <span class="sp-val" id="sFps">—</span>
+            <span class="sp-lbl">FPS</span>
+          </div>
+          <div class="stat-pill pill-green">
+            <span class="sp-val">1000</span>
+            <span class="sp-lbl">CLASSES</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ┌─ RIGHT: RESULTS + LOG ─┐ -->
+      <aside class="right-side">
+
+        <!-- Predictions -->
+        <div class="panel panel-results">
+          <div class="panel-header">
+            <span class="label-tag tag-pink">🎯 PREDICTIONS</span>
+            <div class="panel-actions">
+              <button class="icon-btn" onclick="clearResults()" title="Clear">🗑</button>
+              <button class="icon-btn" onclick="copyResults()"  title="Copy">📋</button>
+            </div>
+          </div>
+          <div class="result-list" id="resultList">
+            <div class="empty-msg">
+              <span class="em-icon">🔭</span>
+              <span>Awaiting camera…</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Console Log -->
+        <div class="panel panel-log">
+          <div class="panel-header">
+            <span class="label-tag tag-orange">🖥 CONSOLE</span>
+            <button class="icon-btn" onclick="clearLog()">✕</button>
+          </div>
+          <div class="log-feed" id="logBody"></div>
+        </div>
+
+      </aside>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
