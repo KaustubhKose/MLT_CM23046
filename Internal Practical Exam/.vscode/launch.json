@@ -1,0 +1,44 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "🍎 Train Fruit Classifier",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/train.py",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "🔍 Predict — single image",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/predict.py",
+      "args": ["--image", "${input:imagePath}"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "📊 Evaluate model",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/evaluate.py",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "📂 Prepare Dataset (split)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/utils/prepare_dataset.py",
+      "args": ["--action", "split", "--source", "raw_data", "--dest", "data"],
+      "console": "integratedTerminal"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "imagePath",
+      "type": "promptString",
+      "description": "Path to fruit image",
+      "default": "data/val/apple/apple_0000.jpg"
+    }
+  ]
+}
